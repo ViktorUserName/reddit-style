@@ -1,16 +1,22 @@
 from rest_framework import serializers
 
-from api.models import Theme, Post, Comment, Like
+from api.models import Theme, Post, Comment, Vote
 
 
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ('id', 'content', 'author', 'parent')
 
 class PostReadSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
     theme_name = serializers.CharField(source='theme.name', read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
 
     class Meta:
         model = Post
-        fields = ('title', 'content', 'author_name', 'theme_name')
+        fields = ('id','title', 'content', 'author_name', 'theme_name', 'vote_count', 'comments')
         # fields = '__all__'
 
 class PostCreateSerializer(serializers.ModelSerializer):
@@ -29,12 +35,28 @@ class ThemeSerializer(serializers.ModelSerializer):
         model = Theme
         fields = ('name', 'posts')
 
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = '__all__'
 
-class LikeSerializer(serializers.ModelSerializer):
+class VoteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Like
-        fields = '__all__'
+        model = Vote
+        fields = ['type']
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        post_id = self.context['view'].kwargs.get('post_id')
+
+        # Проверим, если уже есть голос, но если хотим обновлять - пропускаем в create
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        post_id = self.context['view'].kwargs.get('post_id')
+
+        vote_type = validated_data['type']
+
+        vote, created = Vote.objects.update_or_create(
+            user=user,
+            post_id=post_id,
+            defaults={'type': vote_type}
+        )
+        return vote

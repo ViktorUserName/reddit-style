@@ -27,6 +27,7 @@ class Post(models.Model):
 
 class Comment(models.Model):
     content = models.TextField(max_length=1000)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -47,17 +48,22 @@ class Comment(models.Model):
     def __str__(self):
         return f'comment by {self.author.username}: {self.content[:30]}'
 
-class Like(models.Model):
+class Vote(models.Model):
+    VOTE_TYPES = [
+        ('like', 'Like'),
+        ('dislike', 'Dislike'),
+    ]
+
+    type = models.CharField(max_length=7, choices=VOTE_TYPES)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_likes')
-
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='votes')
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['post', 'user'], name='unique_like')
+            models.UniqueConstraint(fields=['post', 'user'], name='unique_vote')
         ]
 
     def __str__(self):
-        return f'{self.user.username} поставил нравится {self.post.title} !!!'
+        return f'{self.user.username} поставил {self.type} для "{self.post.title}"'
