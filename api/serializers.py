@@ -4,9 +4,17 @@ from api.models import Theme, Post, Comment, Vote
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    post_id = serializers.PrimaryKeyRelatedField(source='post', read_only=True)
     class Meta:
         model = Comment
-        fields = ('id', 'content', 'author', 'parent')
+        fields = ('id', 'content', 'author', 'parent', 'post_id')
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'content', 'parent', 'post')
+
 
 class PostReadSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)

@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.models import Post, Theme, Comment, Vote
-from api.serializers import ThemeSerializer, PostReadSerializer, PostCreateSerializer, CommentSerializer, VoteSerializer
+from api.serializers import ThemeSerializer, PostReadSerializer, PostCreateSerializer, CommentSerializer, \
+    VoteSerializer, CommentCreateSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -21,9 +22,15 @@ class PostViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CommentCreateSerializer
+        return super().get_serializer_class()
 
 class ThemeViewSet(viewsets.ModelViewSet):
     queryset = Theme.objects.all()
